@@ -4,6 +4,7 @@ import 'package:ecomm_app/services/ecomm_client.dart';
 import 'package:ecomm_app/services/json_to_type_converter.dart';
 import 'package:ecomm_app/services/response_classes/GetProductsResponse.dart';
 import 'package:ecomm_app/utils/ecomm_constants.dart';
+import 'package:ecomm_app/widgets/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
