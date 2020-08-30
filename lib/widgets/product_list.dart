@@ -3,6 +3,7 @@ import 'package:ecomm_app/utils/uihelper.dart';
 import 'package:ecomm_app/widgets/filter_sort_widget.dart';
 import 'package:ecomm_app/widgets/multi_select.dart';
 import 'package:ecomm_app/widgets/product.dart';
+import 'package:ecomm_app/widgets/range_picker.dart';
 import 'package:ecomm_app/widgets/top_items.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -160,17 +161,21 @@ class ProductListState extends State<ProductList> {
 
         break;
       case "Price":
-        var prices = Set<num>();
+        var prices = List<num>();
         widget.items.forEach((element) {
           element.variants.forEach((vElement) {
             prices.add(vElement.price);
           });
         });
-        prices.toList().sort();
+        prices = prices.toList();
+        prices.sort((num2, num1){
+          return num1.toDouble() > num2.toDouble() ? -1 : 1;
+        });
         var min = prices.first;
         var max = prices.last;
         print(min);
         print(max);
+        _showRangeFilter(min, max);
         break;
       case "Size":
         var sizes = Set<num>();
@@ -187,6 +192,8 @@ class ProductListState extends State<ProductList> {
         break;
     }
   }
+
+
 
   Widget _showSelectCategory() {
     return Center(
@@ -209,6 +216,40 @@ class ProductListState extends State<ProductList> {
     if (_filteredList != null && _filteredList.length == 0)
       _filteredList = null;
     setState(() {});
+  }
+
+  void _showRangeFilter(num start, num end){
+    showBottomSheet(
+      context: this.context,
+      builder: (context) {
+        return RangeSheet(start, end, _filterRange);
+      },
+    );
+  }
+
+  void _filterRange(RangeValues rv){
+    List<Product> _returnableList = new List<Product>();
+    if (_filteredList != null) _filteredList.clear();
+    widget.items.forEach((element) {
+      List<Variant> _variants =
+      element.variants.where((elementV){
+        if(elementV.price != null) {
+          return elementV.price >= rv.start && elementV.price <= rv.end;
+        } else if (elementV.size != null){
+          return elementV.size >= rv.start && elementV.size <= rv.end;
+        }
+        return true;
+      }).toList();
+      if(_variants.length > 0){
+        _returnableList.add(element);
+        element.variants = _variants;
+      }
+    });
+    _filteredList = _returnableList;
+    if (_filteredList != null && _filteredList.length == 0)
+      _filteredList = null;
+    setState(() {});
+
   }
 
   void _showVariants(Size s, Product _product) {
