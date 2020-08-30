@@ -3,12 +3,14 @@ import 'package:ecomm_app/bloc_app/app_bloc.dart';
 import 'package:ecomm_app/services/ecomm_client.dart';
 import 'package:ecomm_app/services/response_classes/GetProductsResponse.dart';
 import 'package:ecomm_app/utils/connection_checker.dart';
+import 'package:ecomm_app/utils/database_wrapper.dart';
 import 'package:ecomm_app/widgets/categories.dart';
 import 'package:ecomm_app/widgets/loader.dart';
 import 'package:ecomm_app/widgets/product_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
+import 'package:sembast/sembast.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
@@ -23,6 +25,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Product> productList = [];
   final GlobalKey<ProductListState> _productListKey =
       GlobalKey<ProductListState>();
+  bool _goOfflineMode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         message: "Unable to reach server",
                         retry: true,
                         retryFunction: _retryInternet,
+                        offLineMode: _goOffline,
                       );
                     }
                   } else {
@@ -60,6 +64,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 future: ConnectionChecker().canReachServer(),
               );
+            }
+            if(_goOfflineMode){
+              return FutureBuilder<GetProductsResponse>(builder: (context, data){
+                if(data.connectionState != ConnectionState.done){
+                  return Loader();
+                }
+                return Provider<GetProductsResponse>(
+                  create: (context) {
+                    return data.data;
+                  },
+                  child: _getMainBody(data.data),
+                );
+              }, future: LocalDatebase.shared.getSavedResponse(),);
             }
             return FutureBuilder<Response<GetProductsResponse>>(
               builder: (context, data) {
@@ -77,34 +94,39 @@ class _MyHomePageState extends State<MyHomePage> {
                       retry: true,
                       retryFunction: _retryInternet,
                     );
+                  LocalDatebase.shared.saveCategoriesToDB(data.data.body);
                   return Provider<GetProductsResponse>(
                     create: (context) {
                       return data.data.body;
                     },
-                    child: Column(
-                      children: [
-                        Categories(data.data.body.categories, showProducts),
-                        Expanded(
-                            child: Container(
-                          child: ProductList(
-                            productList,
-                            data.data.body.rankings,
-                            key: _productListKey,
-                          ),
-                        )),
-                      ],
-                    ),
+                    child: _getMainBody(data.data.body),
                   );
                 } else {
                   return Loader();
                 }
               },
-              future: Provider.of<ChopperClient>(context)
+              future:Provider.of<ChopperClient>(context)
                   .getService<Service>()
                   .getProducts(),
             );
           },
         ));
+  }
+
+  Widget _getMainBody(GetProductsResponse response){
+    return Column(
+      children: [
+        Categories(response.categories, showProducts),
+        Expanded(
+            child: Container(
+              child: ProductList(
+                productList,
+                response.rankings,
+                key: _productListKey,
+              ),
+            )),
+      ],
+    );
   }
 
   void showProducts(List<Product> _products) {
@@ -116,5 +138,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _retryInternet() {
     BlocProvider.of<EcommAppBloc>(this.context).add(EcommAppEventInit());
+  }
+
+  void _goOffline() async {
+    var response = await LocalDatebase.shared.getSavedResponse();
+    if(response != null){
+      _goOfflineMode = true;
+      BlocProvider.of<EcommAppBloc>(this.context)
+          .add(EcommAppEventStart());
+    }
   }
 }

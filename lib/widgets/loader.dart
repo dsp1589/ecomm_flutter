@@ -4,8 +4,8 @@ class Loader extends StatelessWidget {
   final String message;
   final bool retry;
   final Function retryFunction;
-
-  Loader({this.message, this.retry, this.retryFunction});
+  final Function offLineMode;
+  Loader({this.message, this.retry, this.retryFunction, this.offLineMode});
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +20,12 @@ class Loader extends StatelessWidget {
                   retryFunction();
                 },
                 child: Text("Retry")),
+          if(this.offLineMode != null)
+            FlatButton(
+                onPressed: () {
+                  offLineMode();
+                },
+                child: Text("Go Offline")),
         ],
         mainAxisAlignment: MainAxisAlignment.center,
       ),
