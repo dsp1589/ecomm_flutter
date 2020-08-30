@@ -1,10 +1,12 @@
+import 'package:ecomm_app/widgets/product_list.dart';
 import 'package:flutter/material.dart';
 
 class RangeSheet extends StatefulWidget {
   final num start;
   final num end;
-  final Function(RangeValues) _rangePicked;
-  RangeSheet(this.start, this.end, this._rangePicked);
+  final Function(RangeValues, VariantComp) _rangePicked;
+  final VariantComp _vc;
+  RangeSheet(this.start, this.end, this._rangePicked, this._vc);
 
   @override
   State<StatefulWidget> createState() {
@@ -28,7 +30,7 @@ class _RangeSheetState extends State<RangeSheet> {
               Text("Filter by Range"),
             ],
           ),
-          RangeSlider(
+          Padding(child:RangeSlider(
             values: rv,
             onChanged: (rangevalue) {
               setState(() {
@@ -40,11 +42,11 @@ class _RangeSheetState extends State<RangeSheet> {
             labels: RangeLabels("${rv.start.toInt()}", "${rv.end.toInt()}"),
             activeColor: Colors.blue[500],
             inactiveColor: Colors.blue[50],
-            divisions: ((rv.end - rv.start) / 10).floor() >= 5 ? ((rv.end - rv.start) / 10).floor() : 5,
-          ),
+            divisions: 20,
+          ), padding: EdgeInsets.symmetric(horizontal: 20),),
           Row(
             children: [FlatButton(onPressed: () {
-              widget._rangePicked(rv);
+              widget._rangePicked(rv, widget._vc);
             }, child: Text("Done"))],
             mainAxisAlignment: MainAxisAlignment.end,
           ),

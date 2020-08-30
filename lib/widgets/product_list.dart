@@ -8,6 +8,11 @@ import 'package:ecomm_app/widgets/top_items.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+enum VariantComp{
+  price,
+  size
+}
+
 class ProductList extends StatefulWidget {
   List<Product> items;
   final List<Rankings> rankings;
@@ -175,20 +180,24 @@ class ProductListState extends State<ProductList> {
         var max = prices.last;
         print(min);
         print(max);
-        _showRangeFilter(min, max);
+        _showRangeFilter(min, max, VariantComp.price);
         break;
       case "Size":
-        var sizes = Set<num>();
+        var sizes = List<num>();
         widget.items.forEach((element) {
           element.variants.forEach((vElement) {
             sizes.add(vElement.size);
           });
         });
-        sizes.toList().sort();
+        sizes = sizes.toList();
+        sizes.sort((num2, num1){
+          return num1.toDouble() > num2.toDouble() ? -1 : 1;
+        });
         var min = sizes.first;
         var max = sizes.last;
         print(min);
         print(max);
+        _showRangeFilter(min, max, VariantComp.size);
         break;
     }
   }
@@ -218,25 +227,25 @@ class ProductListState extends State<ProductList> {
     setState(() {});
   }
 
-  void _showRangeFilter(num start, num end){
+  void _showRangeFilter(num start, num end, VariantComp _vc){
     showBottomSheet(
       context: this.context,
       builder: (context) {
-        return RangeSheet(start, end, _filterRange);
+        return RangeSheet(start, end, _filterRange, _vc);
       },
     );
   }
 
-  void _filterRange(RangeValues rv){
+  void _filterRange(RangeValues rv, VariantComp vc){
     List<Product> _returnableList = new List<Product>();
     if (_filteredList != null) _filteredList.clear();
     widget.items.forEach((element) {
       List<Variant> _variants =
       element.variants.where((elementV){
-        if(elementV.price != null) {
-          return elementV.price >= rv.start && elementV.price <= rv.end;
-        } else if (elementV.size != null){
-          return elementV.size >= rv.start && elementV.size <= rv.end;
+        if(elementV.price != null && vc == VariantComp.price) {
+          return elementV.price >= rv.start.ceilToDouble() && elementV.price <= rv.end.floorToDouble();
+        } else if (elementV.size != null  && vc == VariantComp.size){
+          return elementV.size >= rv.start.ceil() && elementV.size <= rv.end.floor();
         }
         return true;
       }).toList();
