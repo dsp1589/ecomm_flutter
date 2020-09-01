@@ -35,9 +35,20 @@ class LocalDatebase {
     _writablePath += _dbPath;
     Database db =  await _dbFactory.openDatabase(_writablePath);
     final result = await _store.record('categories').get(db);
-    final response = GetProductsResponse.fromJson(result);
+    if(result != null){
+      try{
+        final response = GetProductsResponse.fromJson(result);
+        db.close();
+        return response;
+      }catch( err ){
+        print(err);
+      }finally{
+        db.close();
+      }
+    }
     db.close();
-    return response;
+    return null;
+
   }
 
 }
